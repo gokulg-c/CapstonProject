@@ -272,11 +272,6 @@ SELECT * FROM goldenlayer.customer_satisfaction_index
 
 -- COMMAND ----------
 
--- MAGIC %md
--- MAGIC ## Customer Brand Preference Analysis
-
--- COMMAND ----------
-
 CREATE TABLE IF NOT EXISTS goldenlayer.customer_brand_preference
 USING DELTA
 AS
@@ -297,4 +292,4 @@ GROUP BY di.brand_name;
 
 -- COMMAND ----------
 
-SELECT * FROM goldenlayer.customer_brand_preference
+
