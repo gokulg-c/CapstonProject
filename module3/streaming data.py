@@ -50,6 +50,7 @@ def customer_stream_raw():
         .option("cloudFiles.format", "parquet") \
         .option("cloudFiles.schemaLocation", "/mnt/wetelcoschema/outputschema") \
         .option("cloudFiles.schemaEvolutionMode","rescue") \
+        .trigger(once=True)  
         .load("/mnt/wetelcostreams/*.parquet")
     column_names = stream_df.columns
     for column_name in column_names:
