@@ -65,27 +65,6 @@ FROM Plans_df;
 -- Create the database
 CREATE DATABASE IF NOT EXISTS goldenlayer;
 
--- Use the database
-USE goldenlayer;
-
--- COMMAND ----------
-
--- MAGIC %md 
--- MAGIC ##Aggregated Facts for Downstream Consumption
--- MAGIC
-
--- COMMAND ----------
-
--- Aggregating facts based on customer_id and summing bill_amount
-CREATE OR REPLACE TEMPORARY VIEW goldenlayer.aggregated_facts AS
-SELECT
-    customer_id,
-    COUNT(*) AS total_records,
-    SUM(bill_amount) AS total_bill_amount
-FROM fact_table
-GROUP BY customer_id;
-
-
 -- COMMAND ----------
 
 -- MAGIC %md
@@ -102,56 +81,12 @@ SELECT
     MONTH(billing_date) AS billing_month,
     SUM(bill_amount) AS total_bill_amount
 FROM capstone.billing_information
-GROUP BY YEAR(billing_date), MONTH(billing_date);
+GROUP BY YEAR(billing_date), MONTH(billing_date)
+ORDER BY billing_year,billing_month;
 
 -- COMMAND ----------
 
 SELECT * FROM goldenlayer.monthly_billing_totals
-
--- COMMAND ----------
-
--- MAGIC %md
--- MAGIC
--- MAGIC ##Average Rating by Connection Type
-
--- COMMAND ----------
-
-CREATE OR REPLACE TEMPORARY VIEW avg_rating_by_connection_type AS
-SELECT
-    connection_type,
-    AVG(rating) AS avg_rating
-FROM capstone.customer_rating
-GROUP BY connection_type;
-
--- COMMAND ----------
-
-CREATE TABLE IF NOT EXISTS goldlayer.avg_rating_by_connection_type
-USING DELTA
-AS
-SELECT *
-FROM avg_rating_by_connection_type;
-
--- COMMAND ----------
-
--- MAGIC %md
--- MAGIC
--- MAGIC ## Total Bill Amount by Tier
-
--- COMMAND ----------
-
-CREATE TABLE IF NOT EXISTS goldenlayer.total_bill_amount_by_tier
-USING DELTA
-AS
-SELECT
-    ci.value_segment AS tier,
-    SUM(bi.bill_amount) AS total_bill_amount
-FROM capstone.customer_information ci
-INNER JOIN capstone.billing_information bi ON ci.customer_id = bi.customer_id
-GROUP BY ci.value_segment;
-
--- COMMAND ----------
-
-SELECT * FROM goldenlayer.total_bill_amount_by_tier
 
 -- COMMAND ----------
 
@@ -194,7 +129,7 @@ AS
 SELECT
     ci.customer_id,
     ci.value_segment AS tier,
-    AVG(cr.rating) AS avg_rating,
+    COALESCE(AVG(cr.rating), 0) AS avg_rating,
     COUNT(DISTINCT bi.billing_id) AS total_transactions,
     COUNT(DISTINCT di.imei_tac) AS total_devices_used,
     COUNT(DISTINCT bi.payment_date) AS days_active,
@@ -212,30 +147,6 @@ SELECT * FROM goldenlayer.churn_prediction_data
 -- COMMAND ----------
 
 -- MAGIC %md
--- MAGIC ##Network Usage Analysis(NO NEED)
-
--- COMMAND ----------
-
-CREATE TABLE IF NOT EXISTS goldenlayer.network_usage_analysis
-USING DELTA
-AS
-SELECT
-    ci.customer_id,
-    ci.value_segment AS tier,
-    SUM(CASE WHEN pi.voice_service = 'Yes' THEN 1 ELSE 0 END) AS voice_service_count,
-    SUM(CASE WHEN pi.mobile_data = 'Yes' THEN 1 ELSE 0 END) AS mobile_data_count,
-    SUM(CASE WHEN pi.ott = 'Yes' THEN 1 ELSE 0 END) AS ott_service_count
-FROM capstone.customer_information ci
-LEFT JOIN capstone.plans pi ON ci.value_segment = pi.tier
-GROUP BY ci.customer_id, ci.value_segment;
-
--- COMMAND ----------
-
-SELECT * FROM goldenlayer.network_usage_analysis
-
--- COMMAND ----------
-
--- MAGIC %md
 -- MAGIC
 -- MAGIC ##Customer Satisfaction Index (CSI) Analysis
 
@@ -247,13 +158,13 @@ AS
 SELECT
     ci.customer_id,
     ci.full_name,
-    AVG(cr.rating) AS avg_rating,
+    COALESCE(AVG(cr.rating), 0) AS avg_rating,
     ci.value_segment AS tier,
     SUM(CASE WHEN pi.voice_service = 'Yes' THEN 1 ELSE 0 END) AS voice_service_count,
     SUM(CASE WHEN pi.mobile_data = 'Yes' THEN 1 ELSE 0 END) AS mobile_data_count,
     COUNT(DISTINCT bi.billing_id) AS total_transactions,
-    SUM(bi.bill_amount) AS total_billing_amount,
-    DATEDIFF(MAX(bi.payment_date), MIN(bi.billing_date)) AS customer_tenure,
+    COALESCE(SUM(bi.bill_amount), 0) AS total_billing_amount,
+    coalesce(DATEDIFF(MAX(bi.payment_date), MIN(bi.billing_date)),0 ) AS customer_tenure,
     COUNT(DISTINCT di.imei_tac) AS total_devices_used,
     COUNT(DISTINCT bi.payment_date) AS days_active,
     SUM(CASE WHEN ci.system_status = 'Suspended' THEN 1 ELSE 0 END) AS suspended_status_count,
@@ -272,6 +183,11 @@ SELECT * FROM goldenlayer.customer_satisfaction_index
 
 -- COMMAND ----------
 
+-- MAGIC %md
+-- MAGIC ## Customer Brand Preference Analysis
+
+-- COMMAND ----------
+
 CREATE TABLE IF NOT EXISTS goldenlayer.customer_brand_preference
 USING DELTA
 AS
@@ -280,15 +196,75 @@ SELECT
     COUNT(DISTINCT ci.customer_id) AS customer_count,
     COUNT(DISTINCT di.imei_tac) AS device_count,
     COUNT(DISTINCT bi.billing_id) AS total_transactions,
-    SUM(bi.bill_amount) AS total_billing_amount,
-    AVG(cr.rating) AS avg_rating,
-    COUNT(DISTINCT cr.customer_id) AS rated_customers_count,
     COUNT(DISTINCT bi.payment_date) AS days_active
 FROM capstone.device_information di
 LEFT JOIN capstone.customer_information ci ON di.customer_id = ci.customer_id
 LEFT JOIN capstone.billing_information bi ON di.customer_id = bi.customer_id
 LEFT JOIN capstone.customer_rating cr ON di.customer_id = cr.customer_id
 GROUP BY di.brand_name;
+
+-- COMMAND ----------
+
+SELECT * FROM goldenlayer.customer_brand_preference
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC
+-- MAGIC ##Customer Aggregate
+
+-- COMMAND ----------
+
+CREATE TABLE IF NOT EXISTS goldenlayer.customer_fact_aggregate
+USING DELTA
+AS
+SELECT
+    ci.customer_id AS id,
+    ci.full_name AS name,
+    ci.value_segment AS tier,
+    SUM(bi.bill_amount) AS total_amount_paid,
+    di.os_name AS os,
+    di.brand_name AS brand_used
+FROM
+    capstone.customer_information ci
+JOIN
+    capstone.billing_information bi ON ci.customer_id = bi.customer_id
+JOIN
+    capstone.device_information di ON ci.customer_id = di.customer_id
+GROUP BY
+    ci.customer_id, ci.full_name, ci.value_segment, di.os_name, di.brand_name;
+
+
+-- COMMAND ----------
+
+SELECT * FROM goldenlayer.customer_fact_aggregate
+
+-- COMMAND ----------
+
+-- MAGIC %md 
+-- MAGIC ##Tier by ratings with total amount
+
+-- COMMAND ----------
+
+CREATE TABLE IF NOT EXISTS goldenlayer.tier_by_ratings_with_total_amount
+USING DELTA
+AS
+SELECT
+    ci.value_segment AS tier,
+    avg(cr.rating) AS AVG_Rating,
+    SUM(bi.bill_amount) AS total_amount
+FROM
+    capstone.customer_information ci
+JOIN
+    capstone.customer_rating cr ON ci.customer_id = cr.customer_id
+JOIN
+    capstone.billing_information bi ON ci.customer_id = bi.customer_id
+GROUP BY
+    ci.value_segment;
+
+-- COMMAND ----------
+
+SELECT * FROM goldenlayer.tier_by_ratings_with_total_amount
 
 -- COMMAND ----------
 
