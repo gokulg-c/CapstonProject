@@ -69,10 +69,6 @@ print("Cleaned up local files")
 
 # COMMAND ----------
 
-display(dbutils.fs.ls("/mnt/basedata/BronzeLayerData"))
-
-# COMMAND ----------
-
 display(dbutils.fs.ls("/mnt/basedata/unzipped"))
 
 # COMMAND ----------
@@ -82,16 +78,8 @@ billing_partition_df = spark.read.csv(path,header=True,inferSchema=True)
 
 # COMMAND ----------
 
-billing_partition_df.printSchema()
-
-# COMMAND ----------
-
 path = "dbfs:/mnt/basedata/unzipped/Customer_information.csv"
 customer_information_df = spark.read.csv(path,header=True,inferSchema=True)
-
-# COMMAND ----------
-
-customer_information_df.printSchema()
 
 # COMMAND ----------
 
@@ -100,32 +88,12 @@ customer_rating_df = spark.read.csv(path,header=True,inferSchema=True)
 
 # COMMAND ----------
 
-customer_rating_df.printSchema()
-
-# COMMAND ----------
-
 path = "dbfs:/mnt/basedata/unzipped/Plans.csv"
 plan_df = spark.read.csv(path,header=True,inferSchema=True)
 
 # COMMAND ----------
 
-plan_df.printSchema()
-
-# COMMAND ----------
-
 device_information_df = spark.read.json("dbfs:/mnt/basedata/unzipped/Device_Information.json")
-
-# COMMAND ----------
-
-device_information_df.printSchema()
-
-# COMMAND ----------
-
-plan_df.show()
-customer_rating_df.show()
-customer_information_df.show()
-device_information_df.show()
-billing_partition_df.show()
 
 # COMMAND ----------
 
@@ -197,14 +165,6 @@ billing_partition_df= convert_columns_to_lowercase(billing_partition_df)
 
 # COMMAND ----------
 
-plan_df.show()
-customer_rating_df.show()
-customer_information_df.show()
-device_information_df.show()
-billing_partition_df.show()
-
-# COMMAND ----------
-
 from pyspark.sql import DataFrame
 
 def save_dataframes_to_csv_and_json(dataframes: dict, paths: dict):
@@ -266,3 +226,7 @@ paths = {
 
 # Call the function
 save_dataframes_to_csv_and_json(dataframes, paths)
+
+# COMMAND ----------
+
+
