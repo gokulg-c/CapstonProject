@@ -8,6 +8,28 @@ import dlt
 
 # COMMAND ----------
 
+# container_name = "wetelcostreams"
+# account_name = "adlsstoragedata01"
+# storage_account_key = "tBwtMqWlyr9ToC74Jxtq1UrA9aFi8fugoJo2SaKHxbwQnSIimMs6QjLW/Xw2Ujpk6M/wb9F9BXeB+AStk6vtGQ=="
+# dbutils.fs.mount(
+#     source="wasbs://{0}@{1}.blob.core.windows.net".format(container_name, account_name),
+#     mount_point="/mnt/wetelcostreams",
+#     extra_configs={"fs.azure.account.key.{0}.blob.core.windows.net".format(account_name): storage_account_key}
+# )
+
+# COMMAND ----------
+
+# container_name = "mytelco"
+# account_name = "capstoneproject045"
+# storage_account_key = "YomsEYQH5ict2ov6Ld2NoBbxT3eFhjIQDAWGgmSxW2eHiD4mSu48DStIIKCqqvylq5fiRupFU1xv+ASt3UQakA=="
+# dbutils.fs.mount(
+#     source="wasbs://{0}@{1}.blob.core.windows.net".format(container_name, account_name),
+#     mount_point="/mnt/wetelcoschema",
+#     extra_configs={"fs.azure.account.key.{0}.blob.core.windows.net".format(account_name): storage_account_key}
+# )
+
+# COMMAND ----------
+
 @dlt.create_table(
   comment="The raw customers stream data.",
   table_properties={
@@ -28,30 +50,22 @@ def customer_stream_raw():
     """
     # reading the streaming data
     stream_df = spark.readStream \
-      .format("cloudFiles") \
-      .option("cloudFiles.format", "parquet") \
-      .option("cloudFiles.schemaLocation", "/mnt/wetelcoschema/outputschema") \
-      .option("cloudFiles.schemaEvolutionMode","rescue") \
-      .load("/mnt/wetelcostreams/*.parquet")
+        .format("cloudFiles") \
+        .option("cloudFiles.format", "parquet") \
+        .option("cloudFiles.schemaLocation", "/mnt/wetelcoschema/outputschema") \
+        .option("cloudFiles.schemaEvolutionMode","rescue") \
+        .load("/mnt/wetelcostreams/*.parquet")
     column_names = stream_df.columns
     for column_name in column_names:
-     stream_df = stream_df.withColumnRenamed(column_name, column_name.replace(" ", "_"))
+      stream_df = stream_df.withColumnRenamed(column_name, column_name.replace(" ", "_"))
 # Assuming streaming_df is your Spark DataFrame
     stream_df = stream_df.toDF(*[col.lower() for col in stream_df.columns])
     return stream_df
 
 # COMMAND ----------
 
-# customer_information_df = spark.read.parquet("/mnt/basedata/SilverLayerData/")
-
-# COMMAND ----------
-
 # MAGIC %md
 # MAGIC ##identify if any of the fraud callers are existing customers or any of the existing customers receiving calls from fraud numbers
-
-# COMMAND ----------
-
-df=dlt.read("customer_info_silver")
 
 # COMMAND ----------
 
@@ -64,6 +78,7 @@ df=dlt.read("customer_info_silver")
 )
 def fraudIdentification():
     stream_df = dlt.read("customer_stream_raw")
+    customer_information_df=dlt.read("customer_info_silver")
     joined_stream_df = stream_df.join(
         customer_information_df,
         (stream_df.caller_number == customer_information_df.customer_phone) |
@@ -121,7 +136,3 @@ def fraud_calls_by_location():
         .agg({"location": "count"}) \
         .withColumnRenamed("count(location)", "no_of_fraud_calls")
     return fraud_calls_by_location
-
-# COMMAND ----------
-
-
