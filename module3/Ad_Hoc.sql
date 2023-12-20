@@ -50,7 +50,7 @@ select * from ad_hoc.customer_billing_summary
 -- COMMAND ----------
 
 -- MAGIC %md 
--- MAGIC ##3rd
+-- MAGIC ##3rd(NOT COMPLETE)
 
 -- COMMAND ----------
 
