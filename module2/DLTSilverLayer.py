@@ -305,7 +305,7 @@ udf_validate_and_mask_phone_number = udf(validate_and_mask_phone_number, StringT
 @dlt.create_table(
   comment="The cleaning data of billing raws",
   table_properties={
-    "WeEnsure.quality": "Silver",
+    "wetelco.quality": "Silver",
     "pipelines.autoOptimize.managed": "true"
   }
 )
@@ -323,7 +323,7 @@ def billingp_silver():
 @dlt.create_table(
   comment="The silver Customers Info table",
   table_properties={
-    "WeEnsure.quality": "silver",
+    "wetelco.quality": "silver",
     "pipelines.autoOptimize.managed": "true"
   }
 )
@@ -343,7 +343,7 @@ def customer_info_silver():
 @dlt.create_table(
   comment="The silver Customers Rating table",
   table_properties={
-    "WeEnsure.quality": "silver",
+    "wetelco.quality": "silver",
     "pipelines.autoOptimize.managed": "true"
   }
 )
@@ -368,7 +368,7 @@ def customer_rating_silver():
 @dlt.create_table(
   comment="The silver Plan table",
   table_properties={
-    "WeEnsure.quality": "silver",
+    "wetelco.quality": "silver",
     "pipelines.autoOptimize.managed": "true"
   }
 )
@@ -392,7 +392,7 @@ def plans_silver():
 @dlt.create_table(
   comment="The silver device information",
   table_properties={
-    "WeEnsure.quality": "silver",
+    "wetelco.quality": "silver",
     "pipelines.autoOptimize.managed": "true"
   }
 )

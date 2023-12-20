@@ -8,7 +8,7 @@ import dlt
 @dlt.create_table(
   comment="The Raw Billing_partition_1 data",
   table_properties={
-    "WeEnsure.quality": "bronze",
+    "wetelco.quality": "bronze",
     "pipelines.autoOptimize.managed": "true"
   }
 )
@@ -31,7 +31,7 @@ def billingp_raw():
 @dlt.create_table(
   comment="The Raw Customers Info table",
   table_properties={
-    "WeEnsure.quality": "bronze",
+    "wetelco.quality": "bronze",
     "pipelines.autoOptimize.managed": "true"
   }
 )
@@ -54,7 +54,7 @@ def customer_info_raw():
 @dlt.create_table(
   comment="The Raw Customers Rating table",
   table_properties={
-    "WeEnsure.quality": "bronze",
+    "wetelco.quality": "bronze",
     "pipelines.autoOptimize.managed": "true"
   }
 )
@@ -76,7 +76,7 @@ def customer_rating_raw():
 @dlt.create_table(
   comment="The Raw Plan table",
   table_properties={
-    "WeEnsure.quality": "bronze",
+    "wetelco.quality": "bronze",
     "pipelines.autoOptimize.managed": "true"
   }
 )
@@ -98,7 +98,7 @@ def plans_raw():
 @dlt.create_table(
   comment="The raw device information",
   table_properties={
-    "WeEnsure.quality": "bronze",
+    "wetelco.quality": "bronze",
     "pipelines.autoOptimize.managed": "true"
   }
 )

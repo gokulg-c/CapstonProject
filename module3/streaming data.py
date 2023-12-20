@@ -29,7 +29,7 @@ dbutils.fs.mount(
 @dlt.create_table(
   comment="The raw customers stream data.",
   table_properties={
-    "WeEnsure_delta.quality": "bronze",
+    "wetelco.quality": "bronze",
     "pipelines.autoOptimize.managed": "true"
   }
 )
@@ -73,7 +73,7 @@ def customer_stream_raw():
 @dlt.create_table(
   comment="The raw customers stream data.",
   table_properties={
-    "WeEnsure_delta.quality": "gold",
+    "wetelco.quality": "gold",
     "pipelines.autoOptimize.managed": "true"
   }
 )
@@ -98,7 +98,7 @@ from pyspark.sql.functions import *
 @dlt.create_table(
   comment="duration of call by suspected region",
   table_properties={
-    "WeEnsure_delta.quality": "gold",
+    "wetelco.quality": "gold",
     "pipelines.autoOptimize.managed": "true"
   }
 )
@@ -126,7 +126,7 @@ from pyspark.sql.functions import *
 @dlt.create_table(
   comment="fraud_calls_by_location",
   table_properties={
-    "WeEnsure_delta.quality": "gold",
+    "wetelco.quality": "gold",
     "pipelines.autoOptimize.managed": "true"
   }
 )
