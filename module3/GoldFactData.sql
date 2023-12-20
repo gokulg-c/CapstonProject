@@ -1,4 +1,9 @@
 -- Databricks notebook source
+-- MAGIC %sql
+-- MAGIC USE CATALOG wetelco;
+
+-- COMMAND ----------
+
 -- Create the database
 CREATE DATABASE IF NOT EXISTS capstone;
 

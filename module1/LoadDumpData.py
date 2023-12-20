@@ -1,13 +1,26 @@
 # Databricks notebook source
-container_name = "basedata"
-account_name = "capstonp"
-storage_account_key = "+NbWQyuYaB/+tu53Ghq5qlrpqff+pL0Jdtrj7nD7KO99Vn/0Ro5wnjIBAVrxPzfuKH6MUq1IAxoo+AStm/3b9A=="
+dbutils.fs.unmount("/mnt/wetelcodata/")
 
-# dbutils.fs.mount(
-# source = "wasbs://{0}@{1}.blob.core.windows.net".format(container_name, account_name),
-# mount_point = "/mnt/basedata",
-#  extra_configs = {"fs.azure.account.key.{0}.blob.core.windows.net".format(account_name): storage_account_key}
-#   )
+# COMMAND ----------
+
+container_name = "data"
+account_name = "wetelco"
+storage_account_key = "mG0nyBLqrK4T4SJnHOnc3ZBAf/Nkeu7f57Jro3o9ZJAz0ipXPtHkDlOCvaPefzadKSCl5UD97XiL+AStlZdB0Q=="
+
+dbutils.fs.mount(
+source = "wasbs://{0}@{1}.blob.core.windows.net".format(container_name, account_name),
+mount_point = "/mnt/wetelcodata/",
+ extra_configs = {"fs.azure.account.key.{0}.blob.core.windows.net".format(account_name): storage_account_key}
+  )
+
+# COMMAND ----------
+
+display(dbutils.fs.mounts())
+
+# COMMAND ----------
+
+# %sql
+# create database main.wetelco_bronzelayerdb;
 
 # COMMAND ----------
 
@@ -17,14 +30,23 @@ from io import BytesIO
 
 # COMMAND ----------
 
+# %sql
+# drop database main.wetelco_goldlayerdb;
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
 import subprocess
 import os
 from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
 
 zip_file_url = "https://mentorskool-platform-uploads.s3.ap-south-1.amazonaws.com/documents/d92d5094-56ee-43b1-afc1-d6d844d547d5_83d04ac6-cb74-4a96-a06a-e0d5442aa126_Telecom.zip"
 
-local_zip_file_path = "/dbfs/mnt/basedata/data/data.zip"
-local_unzip_dir = "/dbfs/mnt/basedata/data/unzipped_data"
+local_zip_file_path = "/dbfs/mnt/wetelcodata/data/data.zip"
+local_unzip_dir = "/dbfs/mnt/wetelcodata/data/unzipped_data"
 
 azure_connection_string = "DefaultEndpointsProtocol=https;AccountName=capstonp;AccountKey=+NbWQyuYaB/+tu53Ghq5qlrpqff+pL0Jdtrj7nD7KO99Vn/0Ro5wnjIBAVrxPzfuKH6MUq1IAxoo+AStm/3b9A==;EndpointSuffix=core.windows.net"
 
@@ -69,15 +91,15 @@ print("Cleaned up local files")
 
 # COMMAND ----------
 
-display(dbutils.fs.ls("/mnt/basedata/BronzeLayerData"))
+display(dbutils.fs.ls("/mnt/wetelcodata/data"))
 
 # COMMAND ----------
 
-display(dbutils.fs.ls("/mnt/basedata/unzipped"))
+# display(dbutils.fs.ls("/mnt/wetelcodata/unzipped"))
 
 # COMMAND ----------
 
-path = "dbfs:/mnt/basedata/unzipped/Billing_partition_1.csv"
+path = "dbfs:/mnt/wetelcodata/data/unzipped_data/Billing_partition_1.csv"
 billing_partition_df = spark.read.csv(path,header=True,inferSchema=True)
 
 # COMMAND ----------
@@ -86,7 +108,7 @@ billing_partition_df.printSchema()
 
 # COMMAND ----------
 
-path = "dbfs:/mnt/basedata/unzipped/Customer_information.csv"
+path = "dbfs:/mnt/wetelcodata/data/unzipped_data/Customer_information.csv"
 customer_information_df = spark.read.csv(path,header=True,inferSchema=True)
 
 # COMMAND ----------
@@ -95,7 +117,7 @@ customer_information_df.printSchema()
 
 # COMMAND ----------
 
-path = "dbfs:/mnt/basedata/unzipped/Customer_rating.csv"
+path = "dbfs:/mnt/wetelcodata/data/unzipped_data/Customer_rating.csv"
 customer_rating_df = spark.read.csv(path,header=True,inferSchema=True)
 
 # COMMAND ----------
@@ -104,7 +126,7 @@ customer_rating_df.printSchema()
 
 # COMMAND ----------
 
-path = "dbfs:/mnt/basedata/unzipped/Plans.csv"
+path = "dbfs:/mnt/wetelcodata/data/unzipped_data/Plans.csv"
 plan_df = spark.read.csv(path,header=True,inferSchema=True)
 
 # COMMAND ----------
@@ -113,7 +135,7 @@ plan_df.printSchema()
 
 # COMMAND ----------
 
-device_information_df = spark.read.json("dbfs:/mnt/basedata/unzipped/Device_Information.json")
+device_information_df = spark.read.json("dbfs:/mnt/wetelcodata/data/unzipped_data/Device_Information.json")
 
 # COMMAND ----------
 
@@ -205,15 +227,21 @@ billing_partition_df.show()
 
 # COMMAND ----------
 
+# MAGIC %sql
+# MAGIC create database main.wetelco_bronzelayerdb if not exists;
+
+# COMMAND ----------
+
 from pyspark.sql import DataFrame
 
-def save_dataframes_to_parquet(dataframes: dict, paths: dict):
+def save_dataframes_in_delta(dataframes: dict, paths: dict,databasename : str):
     """
-    Saves Spark DataFrames to Parquet format and organizes them into different folders.
+    Saves Spark DataFrames to delta format and organizes them into different folders.
 
     Args:
     - dataframes (dict): Dictionary of DataFrame names and their corresponding DataFrames.
     - paths (dict): Dictionary of paths for each DataFrame to be saved.
+    -databasename : database where table going to save
 
     Example:
     dataframes = {
@@ -236,15 +264,36 @@ def save_dataframes_to_parquet(dataframes: dict, paths: dict):
         if isinstance(df, DataFrame) and df.count() > 0:
             path = paths.get(df_name)
             if path:
-                df.write.mode("overwrite").parquet(path)
-                print(f"DataFrame '{df_name}' saved to Parquet format at '{path}'")
+                df.write.format("delta").mode("overwrite").option("path", path).saveAsTable(f"{databasename}.{df_name}")
             else:
                 print(f"Path not found for DataFrame '{df_name}'. Skipping...")
         else:
             print(f"Invalid DataFrame or empty DataFrame '{df_name}'. Skipping...")
+# billing_partition_df.write.format("delta").mode("overwrite").option("/mnt/wetelcodata/demo", path).saveAsTable("main.wetelco_bronzelayerdb.billing_partition_df")
 
 
 
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC create table main.wetelco_bronzelayerdb.billing_partition_df (
+# MAGIC billing_id string,
+# MAGIC customer_id string,
+# MAGIC billing_date date,
+# MAGIC due_date date,
+# MAGIC payment_date date,
+# MAGIC bill_amount string
+# MAGIC )
+
+# COMMAND ----------
+
+billing_partition_df.write.format("delta").mode("overwrite").option("path","dbfs:/mnt/wetelcodata/BronzeLayerData").saveAsTable("main.wetelco_bronzelayerdb.billing_partition_df")
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC drop database  main.wetelco_bronzelayerdb casade;
 
 # COMMAND ----------
 
@@ -257,11 +306,15 @@ dataframes = {
 }
 
 paths = {
-    "plan_df": "/mnt/basedata/BronzeLayerData/Plans/",
-    "customer_rating_df": "/mnt/basedata/BronzeLayerData/Customer_Rating/",
-    "customer_information_df": "/mnt/basedata/BronzeLayerData/Customer_Information/",
-    "device_information_df": "/mnt/basedata/BronzeLayerData/Device_Information/",
-    "billing_partition_df": "/mnt/basedata/BronzeLayerData/Billing_Information/"
+    "plan_df": "/mnt/wetelcodata/BronzeLayerData/Plans/",
+    "customer_rating_df": "/mnt/wetelcodata/BronzeLayerData/Customer_Rating/",
+    "customer_information_df": "/mnt/wetelcodata/BronzeLayerData/Customer_Information/",
+    "device_information_df": "/mnt/wetelcodata/BronzeLayerData/Device_Information/",
+    "billing_partition_df": "/mnt/wetelcodata/BronzeLayerData/Billing_Information/"
 }
 
-save_dataframes_to_parquet(dataframes, paths)
+save_dataframes_in_delta(dataframes, paths,"main.wetelco_bronzelayerdb")
+
+# COMMAND ----------
+
+

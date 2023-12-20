@@ -97,15 +97,16 @@ Customer_information_df = Customer_information_df.withColumn("customer_phone", u
 # COMMAND ----------
 
 from pyspark.sql import DataFrame
-#remove from here use at one locations
-def save_dataframes_to_parquet(dataframes: dict, paths: dict):
+
+def save_dataframes_in_delta(dataframes: dict, paths: dict,databasename : str):
     """
-    Saves Spark DataFrames to Parquet format and organizes them into different folders.
- 
+    Saves Spark DataFrames to delta format and organizes them into different folders.
+
     Args:
     - dataframes (dict): Dictionary of DataFrame names and their corresponding DataFrames.
     - paths (dict): Dictionary of paths for each DataFrame to be saved.
- 
+    -databasename : database where table going to save
+
     Example:
     dataframes = {
         "plan_df": plan_df,
@@ -115,24 +116,41 @@ def save_dataframes_to_parquet(dataframes: dict, paths: dict):
         "billing_partition_df": billing_partition_df
     }
     paths = {
-        "plan_df": "/mnt/basedata/BronzeLayerData/Plans/",
-        "customer_rating_df": "/mnt/basedata/BronzeLayerData/Customer_Rating/",
-        "customer_information_df": "/mnt/basedata/BronzeLayerData/Customer_Information/",
-        "device_information_df": "/mnt/basedata/BronzeLayerData/Device_Information/",
-        "billing_partition_df": "/mnt/basedata/BronzeLayerData/Billing_Information/"
+        "plan_df": "/mnt/basedata/somelayer/Plans/",
+        "customer_rating_df": "/mnt/basedata/somelayer/Customer_Rating/",
+        "customer_information_df": "/mnt/basedata/somelayer/Customer_Information/",
+        "device_information_df": "/mnt/basedata/somelayer/Device_Information/",
+        "billing_partition_df": "/mnt/basedata/somelayer/Billing_Information/"
     }
- 
+
     """
     for df_name, df in dataframes.items():
         if isinstance(df, DataFrame) and df.count() > 0:
             path = paths.get(df_name)
             if path:
-                df.write.mode("overwrite").parquet(path)
-                print(f"DataFrame '{df_name}' saved to Parquet format at '{path}'")
+                df.write.format("delta").mode("overwrite").option("path", path).saveAsTable(f"{databasename}.{df_name}")
             else:
                 print(f"Path not found for DataFrame '{df_name}'. Skipping...")
         else:
             print(f"Invalid DataFrame or empty DataFrame '{df_name}'. Skipping...")
+
+
+
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC USE CATALOG wetelco;
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC CREATE DATABASE if NOT EXISTS silverlayerdata;
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC USE DATABASE silverlayerdata;
 
 # COMMAND ----------
 
@@ -152,7 +170,8 @@ paths = {
     "billing_partition_df": "/mnt/basedata/SilverLayerData/Billing_Information/"
 }
  
-save_dataframes_to_parquet(dataframes, paths)
+def save_dataframes_in_delta(dataframes: dict, paths: dict,databasename : str):
+(dataframes, paths,"silverlayerdata")
 
 # COMMAND ----------
 
