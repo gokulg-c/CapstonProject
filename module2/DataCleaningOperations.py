@@ -139,21 +139,6 @@ def save_dataframes_in_delta(dataframes: dict, paths: dict,databasename : str):
 
 # COMMAND ----------
 
-# MAGIC %sql
-# MAGIC USE CATALOG wetelco;
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC CREATE DATABASE if NOT EXISTS silverlayerdata;
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC USE DATABASE silverlayerdata;
-
-# COMMAND ----------
-
 dataframes = {
     "plan_df": Plans_df,
     "customer_rating_df": Customer_rating_df,
