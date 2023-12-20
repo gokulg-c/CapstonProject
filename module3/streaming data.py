@@ -19,29 +19,6 @@ display(dbutils.fs.ls("/mnt/wetelcostreams"))
 
 # COMMAND ----------
 
-dbutils.fs.unmount("/mnt/wetelcostreams/")
-
-# COMMAND ----------
-
-dbutils.fs.ls("/mnt/wetelcostreams/outputstream/__tmp_path_dir")
-
-# COMMAND ----------
-
-files = dbutils.fs.ls("/mnt/wetelcostreams/outputstream/")
-files[2].path
-
-# COMMAND ----------
-
-for file in files:
-    dbutils.fs.rm(file.path)
-
-# COMMAND ----------
-
-file_path = "/mnt/wetelcostreams/outputschema/"
-dbutils.fs.rm("/mnt/wetelcostreams/outputschema/")
-
-# COMMAND ----------
-
 df=spark.read.parquet("/mnt/wetelcostreams")
 
 # COMMAND ----------
