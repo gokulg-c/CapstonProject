@@ -1,5 +1,6 @@
 # Databricks notebook source
-
+# MAGIC %md
+# MAGIC ##Streaming Data
 
 # COMMAND ----------
 
