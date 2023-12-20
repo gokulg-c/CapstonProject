@@ -1,8 +1,4 @@
 # Databricks notebook source
-display(dbutils.fs.ls("/mnt/basedata/BronzeLayerData/"))
-
-# COMMAND ----------
-
 from pyspark.sql.functions import *
 from pyspark.sql.types import *
 import dlt

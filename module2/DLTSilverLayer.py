@@ -1,7 +1,12 @@
 # Databricks notebook source
+# MAGIC %run "./2DLTBronze"
+
+# COMMAND ----------
+
 from pyspark.sql.functions import *
 from pyspark.sql.types import *
 import dlt
+from dlt import *
 
 # COMMAND ----------
 
@@ -292,7 +297,8 @@ udf_validate_and_mask_phone_number = udf(validate_and_mask_phone_number, StringT
 
 # COMMAND ----------
 
-
+# MAGIC %md
+# MAGIC ##Cleaning
 
 # COMMAND ----------
 
@@ -304,15 +310,11 @@ udf_validate_and_mask_phone_number = udf(validate_and_mask_phone_number, StringT
   }
 )
 @dlt.expect_or_drop("valid billing_id", "billing_id IS NOT NULL")
-@dlt.expect_or_transform("bill_amount", "double")
-@dlt.expect_or_transform("billing_date", "date")
-@dlt.expect_or_transform("due_date", "date")
-@dlt.expect_or_transform("payment_date", "date")
 def billingp_silver():
-    billingp_df = spark.read.parquet("/mnt/basedata/BronzeLayerData/Billing_Information/")
-    billingp_df = convert_string_columns_to_date_format(Billing_partition_df,["billing_date","due_date"])
-    billingp_df = convert_string_columns_to_numeric(Billing_partition_df,["bill_amount"])
-    billingp_df = convert_null_to_not_available(Billing_partition_df,["customer_id"])
+    billingp_df = dlt.read('billingp_raw')
+    billingp_df = convert_string_columns_to_date_format(billingp_df,["billing_date","due_date","payment_date"])
+    billingp_df = convert_string_columns_to_numeric(billingp_df,["bill_amount"])
+    billingp_df = convert_null_to_not_available(billingp_df,["customer_id"])
     return billingp_df
 
 
@@ -326,15 +328,13 @@ def billingp_silver():
   }
 )
 @dlt.expect_or_drop("valid customer_id", "customer_id IS NOT NULL")
-@dlt.expect_or_transform("dob", "date")
-@dlt.expect_or_transform("customer_phone", "long")
 def customer_info_silver():
-    customer_info_df = spark.read.parquet("/mnt/basedata/BronzeLayerData/Customer_Information/")
-    customer_info_df = convert_string_columns_to_date_format(Customer_information_df,["dob"])
-    customer_info_df = convert_numerical_to_string(Customer_information_df,["customer_phone"])
-    customer_info_df = convert_null_to_not_available(Customer_information_df,["full_name","customer_email","customer_phone","system_status","connection_type","value_segment",])
-    customer_info_df = Customer_information_df.withColumn("customer_email", udf_is_valid_email("customer_email"))
-    customer_info_df = Customer_information_df.withColumn("customer_phone", udf_validate_and_mask_phone_number("customer_phone"))
+    customer_info_df = dlt.read('customer_info_raw')
+    customer_info_df = convert_string_columns_to_date_format(customer_info_df,["dob"])
+    customer_info_df = convert_numerical_to_string(customer_info_df,["customer_phone"])
+    customer_info_df = convert_null_to_not_available(customer_info_df,["full_name","customer_email","customer_phone","system_status","connection_type","value_segment",])
+    customer_info_df = customer_info_df.withColumn("customer_email", udf_is_valid_email("customer_email"))
+    customer_info_df = customer_info_df.withColumn("customer_phone", udf_validate_and_mask_phone_number("customer_phone"))
     return customer_info_df
 
 
@@ -349,9 +349,7 @@ def customer_info_silver():
 )
 
 @dlt.expect_or_drop("valid customer_id", "customer_id IS NOT NULL")
-@dlt.expect_or_transform("rating", "int")
-@dlt.expect_or_transform("customer_phone", "long")
-def customer_rating_raw():
+def customer_rating_silver():
     """
     Load and create the Raw Customers Rating Delta Lake table.
 
@@ -361,8 +359,8 @@ def customer_rating_raw():
     Returns:
         pyspark.sql.DataFrame: A Spark SQL DataFrame containing the raw customer rating data.
     """
-    customer_rating_df = spark.read.parquet("/mnt/basedata/BronzeLayerData/Customer_Rating/")
-    customer_rating_df = convert_null_to_not_available(Customer_rating_df,["feedback"])
+    customer_rating_df = dlt.read('customer_rating_raw')
+    customer_rating_df = convert_null_to_not_available(customer_rating_df,["feedback"])
     return customer_rating_df
 
 # COMMAND ----------
@@ -374,7 +372,7 @@ def customer_rating_raw():
     "pipelines.autoOptimize.managed": "true"
   }
 )
-def plans_raw():
+def plans_silver():
     """
     Load and create the Raw Plans Delta Lake table.
 
@@ -384,9 +382,9 @@ def plans_raw():
     Returns:
         pyspark.sql.DataFrame: A Spark SQL DataFrame containing the raw Plans data.
     """
-    plans_df = payment_df = spark.read.parquet("/mnt/basedata/BronzeLayerData/Plans/")
-    plans_df = drop_rows_with_null(Plans_df,"tier")
-    plans_df = convert_null_to_not_available(Plans_df,["tier","Voice_Service","Mobile_Data","Message","Spam_Detection","Fraud_Prevention","OTT","Emergency"])
+    plans_df = dlt.read('plans_raw')
+    plans_df = drop_rows_with_null(plans_df,"tier")
+    plans_df = convert_null_to_not_available(plans_df,["tier","Voice_Service","Mobile_Data","Message","Spam_Detection","Fraud_Prevention","OTT","Emergency"])
     return plans_df
 
 # COMMAND ----------
@@ -399,7 +397,7 @@ def plans_raw():
   }
 )
 @dlt.expect_or_drop("valid customer_id", "customer_id IS NOT NULL")
-def device_information_raw():
+def device_information_silver():
     """
     Load and create the Raw Device Information Delta Lake table.
 
@@ -410,7 +408,7 @@ def device_information_raw():
         pyspark.sql.DataFrame: A Spark SQL DataFrame containing the raw device information data.
     """
     # Read the JSON file into a DataFrame
-    device_info_df = spark.read.parquet("/mnt/basedata/BronzeLayerData/Device_Information/")
-    device_info_df = convert_null_to_not_available(Device_Information_df,["brand_name","imei_tac","model_name","os_name","os_vendor"])
+    device_info_df = dlt.read('device_information_raw')
+    device_info_df = convert_null_to_not_available(device_info_df,["brand_name","imei_tac","model_name","os_name","os_vendor"])
     # Return the DataFrame
     return device_info_df
