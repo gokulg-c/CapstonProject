@@ -207,9 +207,9 @@ billing_partition_df.show()
 
 from pyspark.sql import DataFrame
 
-def save_dataframes_to_parquet(dataframes: dict, paths: dict):
+def save_dataframes_to_csv_and_json(dataframes: dict, paths: dict):
     """
-    Saves Spark DataFrames to Parquet format and organizes them into different folders.
+    Saves Spark DataFrames to CSV (except Device_Information to JSON) format.
 
     Args:
     - dataframes (dict): Dictionary of DataFrame names and their corresponding DataFrames.
@@ -230,38 +230,39 @@ def save_dataframes_to_parquet(dataframes: dict, paths: dict):
         "device_information_df": "/mnt/basedata/BronzeLayerData/Device_Information/",
         "billing_partition_df": "/mnt/basedata/BronzeLayerData/Billing_Information/"
     }
-
     """
     for df_name, df in dataframes.items():
         if isinstance(df, DataFrame) and df.count() > 0:
             path = paths.get(df_name)
             if path:
-                df.write.mode("overwrite").parquet(path)
-                print(f"DataFrame '{df_name}' saved to Parquet format at '{path}'")
+                if df_name == "device_information_df":
+                    df.write.mode("overwrite").json(path)
+                    print(f"DataFrame '{df_name}' saved to JSON format at '{path}'")
+                else:
+                    df.write.mode("overwrite").csv(path, header=True)
+                    print(f"DataFrame '{df_name}' saved to CSV format at '{path}'")
             else:
                 print(f"Path not found for DataFrame '{df_name}'. Skipping...")
         else:
             print(f"Invalid DataFrame or empty DataFrame '{df_name}'. Skipping...")
 
-
-
-
 # COMMAND ----------
 
 dataframes = {
-    "plan_df": plan_df,
-    "customer_rating_df": customer_rating_df,
-    "customer_information_df": customer_information_df,
-    "device_information_df": device_information_df,
-    "billing_partition_df": billing_partition_df
-}
-
+        "plan_df": plan_df,
+        "customer_rating_df": customer_rating_df,
+        "customer_information_df": customer_information_df,
+        "device_information_df": device_information_df,
+        "billing_partition_df": billing_partition_df
+    }
 paths = {
-    "plan_df": "/mnt/basedata/BronzeLayerData/Plans/",
-    "customer_rating_df": "/mnt/basedata/BronzeLayerData/Customer_Rating/",
-    "customer_information_df": "/mnt/basedata/BronzeLayerData/Customer_Information/",
-    "device_information_df": "/mnt/basedata/BronzeLayerData/Device_Information/",
-    "billing_partition_df": "/mnt/basedata/BronzeLayerData/Billing_Information/"
-}
+        "plan_df": "/mnt/basedata/BronzeLayerData/Plans/",
+        "customer_rating_df": "/mnt/basedata/BronzeLayerData/Customer_Rating/",
+        "customer_information_df": "/mnt/basedata/BronzeLayerData/Customer_Information/",
+        "device_information_df": "/mnt/basedata/BronzeLayerData/Device_Information/",
+        "billing_partition_df": "/mnt/basedata/BronzeLayerData/Billing_Information/"
+    }
+# Define your dataframes and paths here
 
-save_dataframes_to_parquet(dataframes, paths)
+# Call the function
+save_dataframes_to_csv_and_json(dataframes, paths)
