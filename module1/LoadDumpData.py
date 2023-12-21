@@ -69,20 +69,8 @@ print("Cleaned up local files")
 
 # COMMAND ----------
 
-display(dbutils.fs.ls("/mnt/basedata/BronzeLayerData"))
-
-# COMMAND ----------
-
-display(dbutils.fs.ls("/mnt/basedata/unzipped"))
-
-# COMMAND ----------
-
 path = "dbfs:/mnt/basedata/unzipped/Billing_partition_1.csv"
 billing_partition_df = spark.read.csv(path,header=True,inferSchema=True)
-
-# COMMAND ----------
-
-billing_partition_df.printSchema()
 
 # COMMAND ----------
 
@@ -91,16 +79,8 @@ customer_information_df = spark.read.csv(path,header=True,inferSchema=True)
 
 # COMMAND ----------
 
-customer_information_df.printSchema()
-
-# COMMAND ----------
-
 path = "dbfs:/mnt/basedata/unzipped/Customer_rating.csv"
 customer_rating_df = spark.read.csv(path,header=True,inferSchema=True)
-
-# COMMAND ----------
-
-customer_rating_df.printSchema()
 
 # COMMAND ----------
 
@@ -109,23 +89,7 @@ plan_df = spark.read.csv(path,header=True,inferSchema=True)
 
 # COMMAND ----------
 
-plan_df.printSchema()
-
-# COMMAND ----------
-
 device_information_df = spark.read.json("dbfs:/mnt/basedata/unzipped/Device_Information.json")
-
-# COMMAND ----------
-
-device_information_df.printSchema()
-
-# COMMAND ----------
-
-plan_df.show()
-customer_rating_df.show()
-customer_information_df.show()
-device_information_df.show()
-billing_partition_df.show()
 
 # COMMAND ----------
 
@@ -197,71 +161,35 @@ billing_partition_df= convert_columns_to_lowercase(billing_partition_df)
 
 # COMMAND ----------
 
-plan_df.show()
-customer_rating_df.show()
-customer_information_df.show()
-device_information_df.show()
-billing_partition_df.show()
+output_path = "dbfs:/mnt/basedata/unzipped/Customer_information_updated.csv"
+customer_information_df.write.mode("overwrite").csv(output_path, header=True)
 
 # COMMAND ----------
 
-from pyspark.sql import DataFrame
-
-def save_dataframes_to_parquet(dataframes: dict, paths: dict):
-    """
-    Saves Spark DataFrames to Parquet format and organizes them into different folders.
-
-    Args:
-    - dataframes (dict): Dictionary of DataFrame names and their corresponding DataFrames.
-    - paths (dict): Dictionary of paths for each DataFrame to be saved.
-
-    Example:
-    dataframes = {
-        "plan_df": plan_df,
-        "customer_rating_df": customer_rating_df,
-        "customer_information_df": customer_information_df,
-        "device_information_df": device_information_df,
-        "billing_partition_df": billing_partition_df
-    }
-    paths = {
-        "plan_df": "/mnt/basedata/BronzeLayerData/Plans/",
-        "customer_rating_df": "/mnt/basedata/BronzeLayerData/Customer_Rating/",
-        "customer_information_df": "/mnt/basedata/BronzeLayerData/Customer_Information/",
-        "device_information_df": "/mnt/basedata/BronzeLayerData/Device_Information/",
-        "billing_partition_df": "/mnt/basedata/BronzeLayerData/Billing_Information/"
-    }
-
-    """
-    for df_name, df in dataframes.items():
-        if isinstance(df, DataFrame) and df.count() > 0:
-            path = paths.get(df_name)
-            if path:
-                df.write.mode("overwrite").parquet(path)
-                print(f"DataFrame '{df_name}' saved to Parquet format at '{path}'")
-            else:
-                print(f"Path not found for DataFrame '{df_name}'. Skipping...")
-        else:
-            print(f"Invalid DataFrame or empty DataFrame '{df_name}'. Skipping...")
-
-
-
+output_path = "dbfs:/mnt/basedata/unzipped/Plans_updated.csv"
+plan_df.write.mode("overwrite").csv(output_path, header=True)
 
 # COMMAND ----------
 
-dataframes = {
-    "plan_df": plan_df,
-    "customer_rating_df": customer_rating_df,
-    "customer_information_df": customer_information_df,
-    "device_information_df": device_information_df,
-    "billing_partition_df": billing_partition_df
-}
+# dataframes = {
+#         "plan_df": plan_df,
+#         "customer_rating_df": customer_rating_df,
+#         "customer_information_df": customer_information_df,
+#         "device_information_df": device_information_df,
+#         "billing_partition_df": billing_partition_df
+#     }
+# paths = {
+#         "plan_df": "/mnt/basedata/BronzeLayerData/Plans/",
+#         "customer_rating_df": "/mnt/basedata/BronzeLayerData/Customer_Rating/",
+#         "customer_information_df": "/mnt/basedata/BronzeLayerData/Customer_Information/",
+#         "device_information_df": "/mnt/basedata/BronzeLayerData/Device_Information/",
+#         "billing_partition_df": "/mnt/basedata/BronzeLayerData/Billing_Information/"
+#     }
+# # Define your dataframes and paths here
 
-paths = {
-    "plan_df": "/mnt/basedata/BronzeLayerData/Plans/",
-    "customer_rating_df": "/mnt/basedata/BronzeLayerData/Customer_Rating/",
-    "customer_information_df": "/mnt/basedata/BronzeLayerData/Customer_Information/",
-    "device_information_df": "/mnt/basedata/BronzeLayerData/Device_Information/",
-    "billing_partition_df": "/mnt/basedata/BronzeLayerData/Billing_Information/"
-}
+# # Call the function
+# save_dataframes_to_csv_and_json(dataframes, paths)
 
-save_dataframes_to_parquet(dataframes, paths)
+# COMMAND ----------
+
+

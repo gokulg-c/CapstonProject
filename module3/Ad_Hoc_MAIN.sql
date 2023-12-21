@@ -1,7 +1,21 @@
 -- Databricks notebook source
-CREATE DATABASE IF NOT EXISTS ad_hoc;
+-- MAGIC %python
+-- MAGIC
+-- MAGIC plan_df = spark.read.format("delta").table("hive_metastore.dlt_db.plans_silver")
+-- MAGIC customer_rating_df= spark.read.format("delta").table("hive_metastore.dlt_db.customer_rating_silver")
+-- MAGIC customer_information_df= spark.read.format("delta").table("hive_metastore.dlt_db.customer_info_silver")
+-- MAGIC device_information_df= spark.read.format("delta").table("hive_metastore.dlt_db.device_information_silver")
+-- MAGIC billing_partition_df=spark.read.format("delta").table("hive_metastore.dlt_db.billingp_silver")
+-- MAGIC
 
-USE ad_hoc;
+-- COMMAND ----------
+
+-- MAGIC %python
+-- MAGIC plan_df.createOrReplaceTempView("plans")
+-- MAGIC customer_rating_df.createOrReplaceTempView("customer_rating")
+-- MAGIC customer_information_df.createOrReplaceTempView("customer_information")
+-- MAGIC device_information_df.createOrReplaceTempView("device_information")
+-- MAGIC billing_partition_df.createOrReplaceTempView("billing_information")
 
 -- COMMAND ----------
 
@@ -13,15 +27,19 @@ SELECT
     COUNT(DISTINCT di.imei_tac) AS device_count,
     SUM(bi.bill_amount) AS total_bill_amount
 FROM
-    capstone.customer_information ci
+    customer_information ci
 JOIN
-    capstone.device_information di ON ci.customer_id = di.customer_id
+    device_information di ON ci.customer_id = di.customer_id
 JOIN
-    capstone.billing_information bi ON ci.customer_id = bi.customer_id
+    billing_information bi ON ci.customer_id = bi.customer_id
 GROUP BY
     ci.customer_id
 HAVING
     COUNT(DISTINCT di.imei_tac) > 1;
+
+-- COMMAND ----------
+
+select * from ad_hoc.customers_with_multiple_devices
 
 -- COMMAND ----------
 
@@ -39,7 +57,7 @@ SELECT
     SUM(bill_amount) AS total_bill_amount,
     AVG(bill_amount) AS average_bill_amount
 FROM
-    capstone.Billing_Information
+    Billing_Information
 GROUP BY
     customer_id;
 
@@ -56,13 +74,13 @@ select * from ad_hoc.customer_billing_summary
 
 SELECT
     brand_name,
-    COUNT(CASE WHEN brand_name = 'Android' THEN 1 ELSE NULL END) AS Android,
-    COUNT(CASE WHEN brand_name = 'Google' THEN 1 ELSE NULL END) AS Google,
-    COUNT(CASE WHEN brand_name = 'LG OS' THEN 1 ELSE NULL END) AS LG_OS,
-    COUNT(CASE WHEN brand_name = 'Samsung OS' THEN 1 ELSE NULL END) AS Samsung_OS,
-    COUNT(CASE WHEN brand_name = 'Proprietary OS' THEN 1 ELSE NULL END) AS Proprietary_OS
+    COUNT(CASE WHEN os_name = 'Android' THEN 1 ELSE NULL END) AS Android,
+    COUNT(CASE WHEN os_name = 'Google' THEN 1 ELSE NULL END) AS Google,
+    COUNT(CASE WHEN os_name = 'LG OS' THEN 1 ELSE NULL END) AS LG_OS,
+    COUNT(CASE WHEN os_name = 'Samsung OS' THEN 1 ELSE NULL END) AS Samsung_OS,
+    COUNT(CASE WHEN os_name = 'Proprietary OS' THEN 1 ELSE NULL END) AS Proprietary_OS
 FROM
-    capstone.Device_Information
+    Device_Information
 GROUP BY
     brand_name;
 
@@ -82,7 +100,7 @@ WITH CustomerBilling AS (
         AVG(bill_amount) OVER (PARTITION BY customer_id ORDER BY billing_date ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS avg_bill_amount,
         LAG(bill_amount) OVER (PARTITION BY customer_id ORDER BY billing_date) AS previous_bill_amount
     FROM
-        capstone.Billing_Information
+        Billing_Information
 )
 SELECT
     customer_id,
@@ -109,7 +127,7 @@ WITH Customerbill AS (
         COUNT(*) AS bill_count,
         AVG(bill_amount) AS avg_bill_amount
     FROM
-        capstone.billing_information 
+        billing_information 
     GROUP BY
         customer_id
 ),
