@@ -1,5 +1,5 @@
 # Databricks notebook source
-#%run "./2DLTBronze"
+# %run "./2DLTBronze"
 
 # COMMAND ----------
 
@@ -315,6 +315,8 @@ def billingp_silver():
     billingp_df = convert_string_columns_to_date_format(billingp_df,["billing_date","due_date","payment_date"])
     billingp_df = convert_string_columns_to_numeric(billingp_df,["bill_amount"])
     billingp_df = convert_null_to_not_available(billingp_df,["customer_id"])
+    billingp_df.write.format("delta").mode("overwrite").option("mergeSchema", "true").saveAsTable("billingp_silver")
+
     return billingp_df
 
 
@@ -335,6 +337,7 @@ def customer_info_silver():
     customer_info_df = convert_null_to_not_available(customer_info_df,["full_name","customer_email","customer_phone","system_status","connection_type","value_segment",])
     customer_info_df = customer_info_df.withColumn("customer_email", udf_is_valid_email("customer_email"))
     customer_info_df = customer_info_df.withColumn("customer_phone", udf_validate_and_mask_phone_number("customer_phone"))
+    customer_info_df.write.format("delta").mode("overwrite").option("mergeSchema", "true").partitionBy("value_segment").saveAsTable("customer_info_silver")
     return customer_info_df
 
 
@@ -361,6 +364,7 @@ def customer_rating_silver():
     """
     customer_rating_df = dlt.read('customer_rating_raw')
     customer_rating_df = convert_null_to_not_available(customer_rating_df,["feedback"])
+    customer_rating_df.write.format("delta").mode("overwrite").option("mergeSchema", "true").saveAsTable("customer_rating_silver")
     return customer_rating_df
 
 # COMMAND ----------
@@ -385,6 +389,7 @@ def plans_silver():
     plans_df = dlt.read('plans_raw')
     plans_df = drop_rows_with_null(plans_df,"tier")
     plans_df = convert_null_to_not_available(plans_df,["tier","Voice_Service","Mobile_Data","Message","Spam_Detection","Fraud_Prevention","OTT","Emergency"])
+    plans_df.write.format("delta").mode("overwrite").option("mergeSchema", "true").saveAsTable("plans_silver")
     return plans_df
 
 # COMMAND ----------
@@ -410,5 +415,6 @@ def device_information_silver():
     # Read the JSON file into a DataFrame
     device_info_df = dlt.read('device_information_raw')
     device_info_df = convert_null_to_not_available(device_info_df,["brand_name","imei_tac","model_name","os_name","os_vendor"])
+    device_info_df.write.format("delta").mode("overwrite").option("mergeSchema", "true").partitionBy("brand_name").saveAsTable("device_information_silver")
     # Return the DataFrame
     return device_info_df
