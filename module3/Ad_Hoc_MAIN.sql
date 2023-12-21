@@ -74,11 +74,11 @@ select * from ad_hoc.customer_billing_summary
 
 SELECT
     brand_name,
-    COUNT(CASE WHEN brand_name = 'Android' THEN 1 ELSE NULL END) AS Android,
-    COUNT(CASE WHEN brand_name = 'Google' THEN 1 ELSE NULL END) AS Google,
-    COUNT(CASE WHEN brand_name = 'LG OS' THEN 1 ELSE NULL END) AS LG_OS,
-    COUNT(CASE WHEN brand_name = 'Samsung OS' THEN 1 ELSE NULL END) AS Samsung_OS,
-    COUNT(CASE WHEN brand_name = 'Proprietary OS' THEN 1 ELSE NULL END) AS Proprietary_OS
+    COUNT(CASE WHEN os_name = 'Android' THEN 1 ELSE NULL END) AS Android,
+    COUNT(CASE WHEN os_name = 'Google' THEN 1 ELSE NULL END) AS Google,
+    COUNT(CASE WHEN os_name = 'LG OS' THEN 1 ELSE NULL END) AS LG_OS,
+    COUNT(CASE WHEN os_name = 'Samsung OS' THEN 1 ELSE NULL END) AS Samsung_OS,
+    COUNT(CASE WHEN os_name = 'Proprietary OS' THEN 1 ELSE NULL END) AS Proprietary_OS
 FROM
     Device_Information
 GROUP BY

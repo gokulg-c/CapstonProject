@@ -1,17 +1,11 @@
 # Databricks notebook source
-# %run "./2DLTBronze"
+#%run "./2DLTBronze"
 
 # COMMAND ----------
 
 from pyspark.sql.functions import *
 from pyspark.sql.types import *
 import dlt
-from dlt import *
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ###Functions
 
 # COMMAND ----------
 
@@ -38,9 +32,6 @@ def convert_columns_to_lowercase(df): ##code can be used in harmonizations
         df = df.withColumnRenamed(col, column_mapping[col])
     
     return df
-
-# COMMAND ----------
-
 def replace_spaces_with_underscore(df): ##code can be used in harmonizations
     """
     Replace spaces in column names with underscores for a DataFrame.
@@ -64,9 +55,6 @@ def replace_spaces_with_underscore(df): ##code can be used in harmonizations
         df = df.withColumnRenamed(col, column_mapping[col])
     
     return df
-
-# COMMAND ----------
-
 def convert_string_columns_to_date_format(df, columns_to_operate=[]):
     """
     Convert specified string columns to date format (YYYY-MM-DD).
@@ -94,9 +82,6 @@ def convert_string_columns_to_date_format(df, columns_to_operate=[]):
             print(f"Column '{column}' does not exist in the DataFrame. Skipping conversion.")
 
     return df
-
-# COMMAND ----------
-
 def convert_string_columns_to_numeric(df, columns_to_operate):
     """
     Convert specified string columns to numeric type or fill with zero.
@@ -126,9 +111,6 @@ def convert_string_columns_to_numeric(df, columns_to_operate):
             print(f"Column '{column}' does not exist in the DataFrame. Skipping conversion.")
 
     return df
-
-# COMMAND ----------
-
 def convert_null_to_not_available(df, columns_to_operate):
     """
     Convert null values in specified columns to "Not Available".
@@ -152,9 +134,6 @@ def convert_null_to_not_available(df, columns_to_operate):
             print(f"Column '{column}' does not exist in the DataFrame. Skipping conversion.")
 
     return df
-
-# COMMAND ----------
-
 def drop_rows_with_null(df, target_column):
     """
     Drop rows with null values in the specified column.
@@ -177,9 +156,6 @@ def drop_rows_with_null(df, target_column):
         print(f"Column '{target_column}' does not exist in the DataFrame. Skipping row drop.")
 
     return df
-
-
-# COMMAND ----------
 
 def trim_data_in_columns(df, column_list=[]):
     """
@@ -205,37 +181,37 @@ def trim_data_in_columns(df, column_list=[]):
 
     return df
 
-
-# COMMAND ----------
-
 import re
 
-def is_valid_email(email):
-    """
-    Check if the given email is a valid email address.
+# def is_valid_email(email):
+#     """
+#     Check if the given email is a valid email address.
 
-    Parameters:
-    - email: str
-      The email address to validate.
+#     Parameters:
+#     - email: str
+#       The email address to validate.
 
-    Returns:
-    - str
-      The original email if valid, or "Not Available" if not valid.
-    """
-    # Use a simple regex pattern to check for a valid email format
-    email_pattern = re.compile(r"^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+$")
-    if email_pattern.match(email):
-        return email
-    else:
-        return "Not Available"
+#     Returns:
+#     - str
+#       The original email if valid, or "Not Available" if not valid.
+#     """
+#     # Use a simple regex pattern to check for a valid email format
+#     email_pattern = re.compile(r"^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+$")
+#     if email_pattern.match(email):
+#         return email
+#     else:
+#         return "Not Available"
 
-# Create a UDF from the is_valid_email function
-udf_is_valid_email = udf(is_valid_email, StringType())
+# # Create a UDF from the is_valid_email function
+# udf_is_valid_email = udf(is_valid_email, StringType())
+
+def is_valid_email(df, target_column):
+    email_regex = r"^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+$"
+    return df.withColumn(target_column,
+                         when(regexp_extract(col(target_column), email_regex, 0) == col(target_column),
+                              col(target_column)).otherwise("Not Available"))
 
 ##Example use case : df_validated = df.withColumn("Email", udf_is_valid_email("Email"))
-
-# COMMAND ----------
-
 def convert_numerical_to_string(df, column_list):
     """
     Convert numerical values to strings in specified columns.
@@ -263,37 +239,37 @@ def convert_numerical_to_string(df, column_list):
             print(f"Column '{column}' does not exist in the DataFrame. Skipping conversion.")
 
     return df
+# def validate_and_mask_phone_number(phone_number):
+#     """
+#     Check if the phone number is of 10 digits. If not, replace it with "Not Available".
 
-# COMMAND ----------
+#     Parameters:
+#     - phone_number: str
+#       The phone number to validate.
 
-def validate_and_mask_phone_number(phone_number):
-    """
-    Check if the phone number is of 10 digits. If not, replace it with "Not Available".
+#     Returns:
+#     - str
+#       The original phone number if valid, or "Not Available" if not valid.
+#     """
+#     # Remove non-digit characters
+#     clean_phone_number = ''.join(c for c in phone_number if c.isdigit())
 
-    Parameters:
-    - phone_number: str
-      The phone number to validate.
+#     # Check if the cleaned phone number has exactly 10 digits
+#     if len(clean_phone_number) == 10:
+#         return phone_number
+#     else:
+#         return "Not Available"
 
-    Returns:
-    - str
-      The original phone number if valid, or "Not Available" if not valid.
-    """
-    # Remove non-digit characters
-    clean_phone_number = ''.join(c for c in phone_number if c.isdigit())
-
-    # Check if the cleaned phone number has exactly 10 digits
-    if len(clean_phone_number) == 10:
-        return phone_number
-    else:
-        return "Not Available"
-
-# Create a UDF from the validate_and_mask_phone_number function
-udf_validate_and_mask_phone_number = udf(validate_and_mask_phone_number, StringType())
+# # Create a UDF from the validate_and_mask_phone_number function
+# udf_validate_and_mask_phone_number = udf(validate_and_mask_phone_number, StringType())
 
 # Apply the UDF to the PhoneNumber column
 # df_validated = df.withColumn("PhoneNumber", udf_validate_and_mask_phone_number("PhoneNumber"))
 
-
+def validate_and_mask_phone_number(df, target_column):
+    return df.withColumn(target_column,
+                         when(length(col(target_column)) > 10, "Not Available")
+                         .otherwise(col(target_column)))
 
 # COMMAND ----------
 
@@ -315,7 +291,7 @@ def billingp_silver():
     billingp_df = convert_string_columns_to_date_format(billingp_df,["billing_date","due_date","payment_date"])
     billingp_df = convert_string_columns_to_numeric(billingp_df,["bill_amount"])
     billingp_df = convert_null_to_not_available(billingp_df,["customer_id"])
-    billingp_df.write.format("delta").mode("overwrite").option("mergeSchema", "true").saveAsTable("billingp_silver")
+    billingp_df.write.format("delta").mode("overwrite").option("mergeSchema", "true").partitionBy("billing_date").saveAsTable("billingp_silver")
 
     return billingp_df
 
@@ -335,8 +311,10 @@ def customer_info_silver():
     customer_info_df = convert_string_columns_to_date_format(customer_info_df,["dob"])
     customer_info_df = convert_numerical_to_string(customer_info_df,["customer_phone"])
     customer_info_df = convert_null_to_not_available(customer_info_df,["full_name","customer_email","customer_phone","system_status","connection_type","value_segment",])
-    customer_info_df = customer_info_df.withColumn("customer_email", udf_is_valid_email("customer_email"))
-    customer_info_df = customer_info_df.withColumn("customer_phone", udf_validate_and_mask_phone_number("customer_phone"))
+    # customer_info_df = customer_info_df.withColumn("customer_email", udf_is_valid_email("customer_email"))
+    # customer_info_df = customer_info_df.withColumn("customer_phone", udf_validate_and_mask_phone_number("customer_phone"))
+    customer_info_df=validate_and_mask_phone_number(customer_info_df,"customer_phone")
+    customer_info_df=is_valid_email(customer_info_df,"customer_email")
     customer_info_df.write.format("delta").mode("overwrite").option("mergeSchema", "true").partitionBy("value_segment").saveAsTable("customer_info_silver")
     return customer_info_df
 
@@ -364,7 +342,7 @@ def customer_rating_silver():
     """
     customer_rating_df = dlt.read('customer_rating_raw')
     customer_rating_df = convert_null_to_not_available(customer_rating_df,["feedback"])
-    customer_rating_df.write.format("delta").mode("overwrite").option("mergeSchema", "true").saveAsTable("customer_rating_silver")
+    customer_rating_df.write.format("delta").mode("overwrite").option("mergeSchema", "true").partitionBy("rating").saveAsTable("customer_rating_silver")
     return customer_rating_df
 
 # COMMAND ----------
@@ -389,7 +367,7 @@ def plans_silver():
     plans_df = dlt.read('plans_raw')
     plans_df = drop_rows_with_null(plans_df,"tier")
     plans_df = convert_null_to_not_available(plans_df,["tier","Voice_Service","Mobile_Data","Message","Spam_Detection","Fraud_Prevention","OTT","Emergency"])
-    plans_df.write.format("delta").mode("overwrite").option("mergeSchema", "true").saveAsTable("plans_silver")
+    plans_df.write.format("delta").mode("overwrite").option("mergeSchema", "true").partitionBy("tier").saveAsTable("plans_silver")
     return plans_df
 
 # COMMAND ----------
@@ -418,3 +396,7 @@ def device_information_silver():
     device_info_df.write.format("delta").mode("overwrite").option("mergeSchema", "true").partitionBy("brand_name").saveAsTable("device_information_silver")
     # Return the DataFrame
     return device_info_df
+
+# COMMAND ----------
+
+
