@@ -1,24 +1,4 @@
 -- Databricks notebook source
--- MAGIC %python
--- MAGIC
--- MAGIC plan_df = spark.read.format("delta").table("hive_metastore.dlt_db.plans_silver")
--- MAGIC customer_rating_df= spark.read.format("delta").table("hive_metastore.dlt_db.customer_rating_silver")
--- MAGIC customer_information_df= spark.read.format("delta").table("hive_metastore.dlt_db.customer_info_silver")
--- MAGIC device_information_df= spark.read.format("delta").table("hive_metastore.dlt_db.device_information_silver")
--- MAGIC billing_partition_df=spark.read.format("delta").table("hive_metastore.dlt_db.billingp_silver")
--- MAGIC
-
--- COMMAND ----------
-
--- MAGIC %python
--- MAGIC plan_df.createOrReplaceTempView("plans")
--- MAGIC customer_rating_df.createOrReplaceTempView("customer_rating")
--- MAGIC customer_information_df.createOrReplaceTempView("customer_information")
--- MAGIC device_information_df.createOrReplaceTempView("device_information")
--- MAGIC billing_partition_df.createOrReplaceTempView("billing_information")
-
--- COMMAND ----------
-
 CREATE TABLE IF NOT EXISTS ad_hoc.customers_with_multiple_devices
 USING DELTA
 AS
@@ -68,7 +48,7 @@ select * from ad_hoc.customer_billing_summary
 -- COMMAND ----------
 
 -- MAGIC %md 
--- MAGIC ##3rd(NOT COMPLETE)
+-- MAGIC ##3rd
 
 -- COMMAND ----------
 
